@@ -173,9 +173,10 @@ export class TouchEvent extends Component {
                 if (a.x == b.x) {
                   return b.y - a.y;
                 } else {
-                  return b.x - a.x;
+                  return a.x - b.x;
                 }
               });
+              console.log(toMove)
               this.moveUp(toMove);
             } else {
               toMove.sort((a: any, b: any) => {
@@ -185,6 +186,7 @@ export class TouchEvent extends Component {
                   return b.x - a.x;
                 }
               });
+              console.log(toMove)
               this.moveDown(toMove);
             }
           }
@@ -195,35 +197,38 @@ export class TouchEvent extends Component {
   }
   doMove(block, pos, cb) {
     tween(block)
-      .to(0.1, {
+      .to(0.08, {
         position: new Vec3(pos.x, pos.y, 0),
+      }, {
+        onComplete: (target?: object) => {                  // 回调，当缓动动作更新时触发。
+          cb && cb();
+        },
       })
       .start();
-    setTimeout(() => {
-      cb && cb();
-    }, 100);
   }
   moveLeft(toMove) {
     let hasMoved = false;
     let hasScore = false;
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (x == 0 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = x == 0 ? 0 : this.datas[x - 1][y];
+      if (x == 0 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x - 1][y] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x - 1][y];
         this.blocks[x - 1][y] = block;
-        this.datas[x - 1][y] = this.datas[x][y];
+        this.datas[x - 1][y] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
           move(x - 1, y, cb);
         });
       } else if (
-        this.datas[x][y] == this.datas[x - 1][y] &&
+        curData == nextData &&
         (!this.lastMerge || this.lastMerge.x != x - 1 || this.lastMerge.y != y)
       ) {
         hasMoved = true;
@@ -262,22 +267,24 @@ export class TouchEvent extends Component {
     let counter: number = 0;
     console.log(toMove);
     const move = (x, y, cb) => {
-      if (x == 3 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = x == 3 ? 0 : this.datas[x + 1][y];
+      if (x == 3 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x + 1][y] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x + 1][y];
         this.blocks[x + 1][y] = block;
-        this.datas[x + 1][y] = this.datas[x][y];
+        this.datas[x + 1][y] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
           move(x + 1, y, cb);
         });
       } else if (
-        this.datas[x][y] == this.datas[x + 1][y] &&
+        curData == nextData &&
         (!this.lastMerge || this.lastMerge.x != x + 1 || this.lastMerge.y != y)
       ) {
         hasMoved = true;
@@ -315,22 +322,24 @@ export class TouchEvent extends Component {
     let hasScore = false;
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (y == 3 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = y == 3 ? 0 : this.datas[x][y + 1];
+      if (y == 3 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x][y + 1] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x][y + 1];
         this.blocks[x][y + 1] = block;
-        this.datas[x][y + 1] = this.datas[x][y];
+        this.datas[x][y + 1] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
           move(x, y + 1, cb);
         });
       } else if (
-        this.datas[x][y] == this.datas[x][y + 1] &&
+        curData == nextData &&
         (!this.lastMerge || this.lastMerge.x != x || this.lastMerge.y != y + 1)
       ) {
         hasMoved = true;
@@ -366,25 +375,26 @@ export class TouchEvent extends Component {
   moveDown(toMove) {
     let hasMoved = false;
     let hasScore = false;
-    let curIdx = 0;
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (y == 0 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = y == 0 ? 0 : this.datas[x][y - 1];
+      if (y == 0 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x][y - 1] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x][y - 1];
         this.blocks[x][y - 1] = block;
-        this.datas[x][y - 1] = this.datas[x][y];
+        this.datas[x][y - 1] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
           move(x, y - 1, cb);
         });
       } else if (
-        this.datas[x][y] == this.datas[x][y - 1] &&
+        curData == nextData &&
         (!this.lastMerge || this.lastMerge.x != x || this.lastMerge.y != y - 1)
       ) {
         hasMoved = true;
