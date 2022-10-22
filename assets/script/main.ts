@@ -27,17 +27,17 @@ const MOVE_DURATION = 0.1;
 export class TouchEvent extends Component {
   private startPoint: any = null;
   private endPoint: any = null;
-  private score: number = 0;
+  // private score: number = 0;
   private moving: boolean = false;
-  private lastMerge: any = null;
+  private lastMerge: string = "";
   private gap: number = 16;
   private data: number[][] = [];
   @property(Prefab)
   private blockPrefab: Prefab = null;
   @property(Node)
   private bdBoard: Node = null;
-  @property(Label)
-  private scoreLabel: Label = null;
+  // @property(Label)
+  // private scoreLabel: Label = null;
   private blockLabel: Label = null;
   // 每个格子的节点元素
   private blocks: any[][] = [];
@@ -66,7 +66,7 @@ export class TouchEvent extends Component {
     }
   }
   init() {
-    this.uptScore(0);
+    // this.uptScore(0);
     if (this.blocks && this.blocks.length) {
       this.blocks.forEach((_blocks, i) => {
         if (_blocks && _blocks.length) {
@@ -88,10 +88,10 @@ export class TouchEvent extends Component {
     this.addBlock();
     this.addBlock();
   }
-  uptScore(score: number) {
-    this.score = score;
-    this.scoreLabel.string = String(score);
-  }
+  // uptScore(score: number) {
+  //   this.score = score;
+  //   this.scoreLabel.string = String(score);
+  // }
   getEmptyBlocks() {
     const emptys: object[] = [];
     this.blocks.forEach((_blocks, i) => {
@@ -224,7 +224,7 @@ export class TouchEvent extends Component {
         });
       } else if (
         this.datas[x][y] == this.datas[x - 1][y] &&
-        (!this.lastMerge || this.lastMerge.x != x - 1 || this.lastMerge.y != y)
+        (!this.lastMerge || this.lastMerge.indexOf(`${x - 1}_${y}`) == -1)
       ) {
         hasMoved = true;
         hasScore = true;
@@ -236,7 +236,7 @@ export class TouchEvent extends Component {
         this.blocks[x - 1][y]
           .getComponent("block")
           .setNumber(this.datas[x - 1][y]);
-        this.lastMerge = { x: x - 1, y };
+        this.lastMerge += ` ${x - 1}_${y}`;
         this.doMove(block, position, () => {
           block.destroy();
           cb && cb();
@@ -278,7 +278,7 @@ export class TouchEvent extends Component {
         });
       } else if (
         this.datas[x][y] == this.datas[x + 1][y] &&
-        (!this.lastMerge || this.lastMerge.x != x + 1 || this.lastMerge.y != y)
+        (!this.lastMerge || this.lastMerge.indexOf(`${x + 1}_${y}`) == -1)
       ) {
         hasMoved = true;
         hasScore = true;
@@ -290,7 +290,7 @@ export class TouchEvent extends Component {
         this.blocks[x + 1][y]
           .getComponent("block")
           .setNumber(this.datas[x + 1][y]);
-        this.lastMerge = { x: x + 1, y };
+        this.lastMerge += ` ${x + 1}_${y}`;
         this.doMove(block, position, () => {
           block.destroy();
           cb && cb();
@@ -331,7 +331,7 @@ export class TouchEvent extends Component {
         });
       } else if (
         this.datas[x][y] == this.datas[x][y + 1] &&
-        (!this.lastMerge || this.lastMerge.x != x || this.lastMerge.y != y + 1)
+        (!this.lastMerge || this.lastMerge.indexOf(`${x}_${y + 1}`) == -1)
       ) {
         hasMoved = true;
         hasScore = true;
@@ -343,7 +343,7 @@ export class TouchEvent extends Component {
         this.blocks[x][y + 1]
           .getComponent("block")
           .setNumber(this.datas[x][y + 1]);
-        this.lastMerge = { x: x, y: y + 1 };
+        this.lastMerge += ` ${x}_${y + 1}`;
         this.doMove(block, position, () => {
           block.destroy();
           cb && cb();
@@ -385,7 +385,7 @@ export class TouchEvent extends Component {
         });
       } else if (
         this.datas[x][y] == this.datas[x][y - 1] &&
-        (!this.lastMerge || this.lastMerge.x != x || this.lastMerge.y != y - 1)
+        (!this.lastMerge || this.lastMerge.indexOf(`${x}_${y - 1}`) == -1)
       ) {
         hasMoved = true;
         hasScore = true;
@@ -397,7 +397,7 @@ export class TouchEvent extends Component {
         this.blocks[x][y - 1]
           .getComponent("block")
           .setNumber(this.datas[x][y - 1]);
-        this.lastMerge = { x: x, y: y - 1 };
+        this.lastMerge += ` ${x}_${y - 1}`;
         this.doMove(block, position, () => {
           block.destroy();
           cb && cb();
@@ -436,15 +436,15 @@ export class TouchEvent extends Component {
       this.addBlock();
     }
     if (hasScore) {
-      let score: number = 0;
-      this.datas.forEach((_data) => {
-        _data.forEach((data) => {
-          score += data;
-        });
-      });
-      this.uptScore(score);
+      // let score: number = 0;
+      // this.datas.forEach((_data) => {
+      //   _data.forEach((data) => {
+      //     score += data;
+      //   });
+      // });
+      // this.uptScore(score);
     }
-    this.lastMerge = null;
+    this.lastMerge = '';
     this.moving = false;
   }
   update(deltaTime: number) {}
