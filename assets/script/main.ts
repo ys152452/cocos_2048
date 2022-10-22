@@ -25,10 +25,12 @@ const MIN_LENGTH = 50;
 const MOVE_DURATION = 0.1;
 @ccclass("TouchEvent")
 export class TouchEvent extends Component {
+  // 鼠标事件的开始和结束坐标
   private startPoint: any = null;
   private endPoint: any = null;
   // private score: number = 0;
   private moving: boolean = false;
+  // 维护一个坐标拼接字符串，对于已经合并过的格子禁止再次合并，处理2+2+4=8的情况
   private lastMerge: string = "";
   private gap: number = 16;
   private data: number[][] = [];
@@ -45,12 +47,13 @@ export class TouchEvent extends Component {
   private datas: any[][] = [];
   // 每个格子的位置
   private positions: any[][] = [];
-
+  
   start() {
     this.drawBgBlocks();
     this.init();
     this.addEventHandler();
   }
+  // 绘制格子
   drawBgBlocks() {
     for (let i = 0; i < 4; i++) {
       this.positions[i] = [];
@@ -65,6 +68,7 @@ export class TouchEvent extends Component {
       }
     }
   }
+  // 重置
   init() {
     // this.uptScore(0);
     if (this.blocks && this.blocks.length) {
@@ -80,6 +84,8 @@ export class TouchEvent extends Component {
     }
     this.datas = [];
     this.blocks = [];
+    this.lastMerge = '';
+    this.moving = false;
     for (let i = 0; i < 4; i++) {
       this.blocks.push([null, null, null, null]);
       this.datas.push([0, 0, 0, 0]);
@@ -92,6 +98,7 @@ export class TouchEvent extends Component {
   //   this.score = score;
   //   this.scoreLabel.string = String(score);
   // }
+  // 获取空格子
   getEmptyBlocks() {
     const emptys: object[] = [];
     this.blocks.forEach((_blocks, i) => {
@@ -103,22 +110,22 @@ export class TouchEvent extends Component {
     });
     return emptys;
   }
+  // 生成一个格子
   addBlock() {
-    const emptys = this.getEmptyBlocks();
+    const emptys: any[] = this.getEmptyBlocks();
     if (!emptys || !emptys.length) return;
     const pos = randomRangeInt(0, emptys.length);
     const { x, y } = emptys[pos];
     let posistion = this.positions[x][y];
-
     let block = instantiate(this.blockPrefab);
     this.bdBoard.addChild(block);
     block.setPosition(posistion.x, posistion.y);
-    const number = NUMBERS[randomRangeInt(0, 2)];
+    const number: number = NUMBERS[randomRangeInt(0, 2)];
     block.getComponent("block").setNumber(number);
     this.blocks[x][y] = block;
     this.datas[x][y] = number;
   }
-
+// 注册事件
   addEventHandler() {
     input.on(
       Input.EventType.TOUCH_START,
@@ -173,9 +180,10 @@ export class TouchEvent extends Component {
                 if (a.x == b.x) {
                   return b.y - a.y;
                 } else {
-                  return b.x - a.x;
+                  return a.x - b.x;
                 }
               });
+              console.log(toMove)
               this.moveUp(toMove);
             } else {
               toMove.sort((a: any, b: any) => {
@@ -185,6 +193,7 @@ export class TouchEvent extends Component {
                   return b.x - a.x;
                 }
               });
+              console.log(toMove)
               this.moveDown(toMove);
             }
           }
@@ -193,30 +202,36 @@ export class TouchEvent extends Component {
       this
     );
   }
+  // 格子的移动
   doMove(block, pos, cb) {
     tween(block)
-      .to(0.1, {
+      .to(0.08, {
         position: new Vec3(pos.x, pos.y, 0),
+      }, {
+        onComplete: (target?: object) => {                  // 回调，当缓动动作更新时触发。
+          cb && cb();
+        },
       })
       .start();
-    setTimeout(() => {
-      cb && cb();
-    }, 100);
   }
+
   moveLeft(toMove) {
     let hasMoved = false;
     let hasScore = false;
+    // 次数标记，与需要移动的格子总数对比
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (x == 0 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = x == 0 ? 0 : this.datas[x - 1][y];
+      if (x == 0 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x - 1][y] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x - 1][y];
         this.blocks[x - 1][y] = block;
-        this.datas[x - 1][y] = this.datas[x][y];
+        this.datas[x - 1][y] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
@@ -262,15 +277,17 @@ export class TouchEvent extends Component {
     let counter: number = 0;
     console.log(toMove);
     const move = (x, y, cb) => {
-      if (x == 3 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = x == 3 ? 0 : this.datas[x + 1][y];
+      if (x == 3 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x + 1][y] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x + 1][y];
         this.blocks[x + 1][y] = block;
-        this.datas[x + 1][y] = this.datas[x][y];
+        this.datas[x + 1][y] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
@@ -315,15 +332,17 @@ export class TouchEvent extends Component {
     let hasScore = false;
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (y == 3 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = y == 3 ? 0 : this.datas[x][y + 1];
+      if (y == 3 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x][y + 1] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x][y + 1];
         this.blocks[x][y + 1] = block;
-        this.datas[x][y + 1] = this.datas[x][y];
+        this.datas[x][y + 1] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
@@ -366,18 +385,19 @@ export class TouchEvent extends Component {
   moveDown(toMove) {
     let hasMoved = false;
     let hasScore = false;
-    let curIdx = 0;
     let counter: number = 0;
     const move = (x, y, cb) => {
-      if (y == 0 || this.datas[x][y] == 0) {
+      const curData = this.datas[x][y];
+      const nextData = y == 0 ? 0 : this.datas[x][y - 1];
+      if (y == 0 || curData == 0) {
         cb && cb();
         return;
-      } else if (this.datas[x][y - 1] == 0) {
+      } else if (nextData == 0) {
         hasMoved = true;
         let block = this.blocks[x][y];
         let position = this.positions[x][y - 1];
         this.blocks[x][y - 1] = block;
-        this.datas[x][y - 1] = this.datas[x][y];
+        this.datas[x][y - 1] = curData;
         this.datas[x][y] = 0;
         this.blocks[x][y] = null;
         this.doMove(block, position, () => {
@@ -417,6 +437,7 @@ export class TouchEvent extends Component {
       });
     });
   }
+  // 检查是否失败
   checkFail() {
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
@@ -428,6 +449,7 @@ export class TouchEvent extends Component {
     }
     return true;
   }
+  // 每次移动之后触发
   afterMove(hasMoved, hasScore) {
     if (this.checkFail()) {
       this.init();
