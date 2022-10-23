@@ -18,7 +18,7 @@ import {
 } from "cc";
 const { Vec2 } = math;
 const { ccclass, property } = _decorator;
-const NUMBERS = [2, 4];
+const BASES = ['wood', 'stone', 'cloth', 'plant'];
 const MIN_LENGTH = 50;
 @ccclass("TouchEvent")
 export class TouchEvent extends Component {
@@ -133,7 +133,7 @@ export class TouchEvent extends Component {
     let block = instantiate(this.blockPrefab);
     this.bdBoard.addChild(block);
     block.setPosition(posistion.x, posistion.y);
-    const number: number = NUMBERS[randomRangeInt(0, 2)];
+    const number: number = BASES[randomRangeInt(0, 2)];
     block.getComponent("block").setNumber(number);
     this.blocks[x][y] = block;
     this.datas[x][y] = number;
