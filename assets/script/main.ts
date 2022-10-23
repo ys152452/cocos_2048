@@ -3,8 +3,6 @@ import {
   Component,
   tween,
   log,
-  input,
-  Input,
   EventTouch,
   math,
   Canvas,
@@ -16,13 +14,12 @@ import {
   randomRangeInt,
   Graphics,
   Vec3,
+  screen,
 } from "cc";
 const { Vec2 } = math;
 const { ccclass, property } = _decorator;
-const ROWS = 4;
 const NUMBERS = [2, 4];
 const MIN_LENGTH = 50;
-const MOVE_DURATION = 0.1;
 @ccclass("TouchEvent")
 export class TouchEvent extends Component {
   // 鼠标事件的开始和结束坐标
@@ -33,11 +30,14 @@ export class TouchEvent extends Component {
   // 维护一个坐标拼接字符串，对于已经合并过的格子禁止再次合并，处理2+2+4=8的情况
   private lastMerge: string = "";
   private gap: number = 16;
+  private winHeight: number = screen.windowSize.height;
   private data: number[][] = [];
   @property(Prefab)
   private blockPrefab: Prefab = null;
   @property(Node)
   private bdBoard: Node = null;
+  @property(Node)
+  private controlBottom: Node = null;
   // @property(Label)
   // private scoreLabel: Label = null;
   private blockLabel: Label = null;
@@ -47,11 +47,24 @@ export class TouchEvent extends Component {
   private datas: any[][] = [];
   // 每个格子的位置
   private positions: any[][] = [];
-  
+
   start() {
+    this.drawBg();
     this.drawBgBlocks();
     this.init();
     this.addEventHandler();
+  }
+  drawBg() {
+    const bgMarginTop: number = this.winHeight / 2 - 640 - 360;
+    const ctrlBtMarginBottom: number = 0 - this.winHeight / 2 + 240;
+    const bgPos: Vec3 = this.bdBoard.position;
+    const crtlBtPos: Vec3 = this.controlBottom.position;
+    bgPos.y = bgMarginTop;
+    crtlBtPos.y = ctrlBtMarginBottom;
+    this.bdBoard.setPosition(bgPos);
+    this.controlBottom.setPosition(crtlBtPos);
+    console.log(crtlBtPos);
+    
   }
   // 绘制格子
   drawBgBlocks() {
@@ -84,7 +97,7 @@ export class TouchEvent extends Component {
     }
     this.datas = [];
     this.blocks = [];
-    this.lastMerge = '';
+    this.lastMerge = "";
     this.moving = false;
     for (let i = 0; i < 4; i++) {
       this.blocks.push([null, null, null, null]);
@@ -125,17 +138,17 @@ export class TouchEvent extends Component {
     this.blocks[x][y] = block;
     this.datas[x][y] = number;
   }
-// 注册事件
+  // 注册事件
   addEventHandler() {
-    input.on(
-      Input.EventType.TOUCH_START,
+    this.bdBoard.on(
+      Node.EventType.TOUCH_START,
       (event) => {
         this.startPoint = event.getLocation();
       },
       this
     );
-    input.on(
-      Input.EventType.TOUCH_END,
+    this.bdBoard.on(
+      Node.EventType.TOUCH_END,
       (event) => {
         this.endPoint = event.getLocation();
         let vec = this.endPoint.subtract(this.startPoint);
@@ -183,7 +196,7 @@ export class TouchEvent extends Component {
                   return a.x - b.x;
                 }
               });
-              console.log(toMove)
+              console.log(toMove);
               this.moveUp(toMove);
             } else {
               toMove.sort((a: any, b: any) => {
@@ -193,7 +206,7 @@ export class TouchEvent extends Component {
                   return b.x - a.x;
                 }
               });
-              console.log(toMove)
+              console.log(toMove);
               this.moveDown(toMove);
             }
           }
@@ -205,13 +218,18 @@ export class TouchEvent extends Component {
   // 格子的移动
   doMove(block, pos, cb) {
     tween(block)
-      .to(0.08, {
-        position: new Vec3(pos.x, pos.y, 0),
-      }, {
-        onComplete: (target?: object) => {                  // 回调，当缓动动作更新时触发。
-          cb && cb();
+      .to(
+        0.08,
+        {
+          position: new Vec3(pos.x, pos.y, 0),
         },
-      })
+        {
+          onComplete: (target?: object) => {
+            // 回调，当缓动动作更新时触发。
+            cb && cb();
+          },
+        }
+      )
       .start();
   }
 
@@ -466,7 +484,7 @@ export class TouchEvent extends Component {
       // });
       // this.uptScore(score);
     }
-    this.lastMerge = '';
+    this.lastMerge = "";
     this.moving = false;
   }
   update(deltaTime: number) {}
